@@ -8,7 +8,11 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const TARGET_URL = 'https://www.datawrapper.de/_/Q69CZ/';
 
 async function scrapeStandings() {
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    headless: true
+  });
+
   const page = await browser.newPage();
   await page.goto(TARGET_URL, { waitUntil: 'networkidle0' });
 
@@ -18,9 +22,9 @@ async function scrapeStandings() {
     return rows.map(row => {
       const cells = row.querySelectorAll('td');
       return {
-        team: cells[0]?.innerText.trim(),
-        played: parseInt(cells[1]?.innerText.trim()),
-        points: parseInt(cells[2]?.innerText.trim())
+        team: cells[0]?.innerText.trim() || '',
+        played: parseInt(cells[1]?.innerText.trim()) || 0,
+        points: parseInt(cells[2]?.innerText.trim()) || 0
       };
     });
   });
@@ -28,16 +32,27 @@ async function scrapeStandings() {
   await browser.close();
 
   if (standings.length === 0) {
-    console.log('No standings found. Aborting.');
+    console.log('❌ No standings found. Aborting.');
     return;
   }
 
-  await supabase.from('standings').delete().neq('id', 0);
+  console.log(`✅ Scraped ${standings.length} standings, updating database...`);
 
-  const { error } = await supabase.from('standings').insert(standings);
-  if (error) throw error;
+  // Clear old data
+  const { error: deleteError } = await supabase.from('standings').delete().neq('id', 0);
+  if (deleteError) {
+    console.error('❌ Failed to delete old records:', deleteError.message);
+    return;
+  }
 
-  console.log(`✅ Standings updated: ${standings.length} records.`);
+  // Insert new standings
+  const { error: insertError } = await supabase.from('standings').insert(standings);
+  if (insertError) {
+    console.error('❌ Failed to insert new standings:', insertError.message);
+    return;
+  }
+
+  console.log('✅ Standings updated successfully!');
 }
 
 scrapeStandings();
