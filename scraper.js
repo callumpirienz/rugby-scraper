@@ -17,17 +17,21 @@ async function scrapeStandings() {
   await page.goto(TARGET_URL, { waitUntil: 'networkidle0' });
 
   // Adjust the selector based on the actual table structure
-  const standings = await page.evaluate(() => {
-    const rows = Array.from(document.querySelectorAll('table tbody tr'));
-    return rows.map(row => {
-      const cells = row.querySelectorAll('td');
-      return {
-        team: cells[0]?.innerText.trim() || '',
-        played: parseInt(cells[1]?.innerText.trim()) || 0,
-        points: parseInt(cells[2]?.innerText.trim()) || 0
-      };
-    });
+const standings = await page.evaluate(() => {
+  const rows = Array.from(document.querySelectorAll('table tbody tr'));
+  return rows.map(row => {
+    const cells = row.querySelectorAll('td');
+    return {
+      team: cells[0]?.innerText.trim() || '',
+      played: parseInt(cells[1]?.innerText.trim()) || 0,
+      won: parseInt(cells[2]?.innerText.trim()) || 0,
+      drawn: parseInt(cells[3]?.innerText.trim()) || 0,
+      lost: parseInt(cells[4]?.innerText.trim()) || 0,
+      points: parseInt(cells[5]?.innerText.trim()) || 0
+    };
   });
+});
+
 
   await browser.close();
 
@@ -39,14 +43,14 @@ async function scrapeStandings() {
   console.log(`✅ Scraped ${standings.length} standings, updating database...`);
 
   // Clear old data
-  const { error: deleteError } = await supabase.from('standings').delete().not('id', 'is', null);
+  const { error: deleteError } = await supabase.from('simple_standings').delete().not('id', 'is', null);
   if (deleteError) {
     console.error('❌ Failed to delete old records:', deleteError.message);
     return;
   }
 
   // Insert new standings
-  const { error: insertError } = await supabase.from('standings').insert(standings);
+  const { error: insertError } = await supabase.from('simple_standings').insert(standings);
   if (insertError) {
     console.error('❌ Failed to insert new standings:', insertError.message);
     return;
