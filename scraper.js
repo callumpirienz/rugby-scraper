@@ -5,7 +5,7 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const TARGET_URL = 'https://www.datawrapper.de/_/Q69CZ/';
+const TARGET_URL = 'https://www.premiershiprugby.com/standings?competition=gallagher-premiership';
 
 async function scrapeStandings() {
   const browser = await puppeteer.launch({
