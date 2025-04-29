@@ -9,6 +9,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // Config URLs
 const PREMIERSHIP_URL = 'https://www.premiershiprugby.com/standings?competition=gallagher-premiership';
 const SUPER_RUGBY_URL = 'https://www.tntsports.co.uk/rugby/super-rugby/standings.shtml';
+const URC_URL = 'https://www.unitedrugby.com/match-centre/table/2024-25';
+
 
 async function scrapeGallagherPremiership(browser) {
   const page = await browser.newPage();
@@ -104,12 +106,56 @@ async function scrapeSuperRugby(browser) {
     return;
   }
 
+  async function scrapeURC(browser) {
+  const page = await browser.newPage();
+  await page.goto(URC_URL, { waitUntil: 'networkidle0' });
+
+  // Wait for the table to fully load
+  await page.waitForSelector('table tbody tr', { timeout: 15000 });
+
+  const standings = await page.evaluate(() => {
+    const table = document.querySelector('table');
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    return rows.map(row => {
+      const cells = row.querySelectorAll('td');
+      return {
+        team: cells[1]?.innerText.trim() || '',
+        played: parseInt(cells[2]?.innerText.trim()) || 0,
+        won: parseInt(cells[3]?.innerText.trim()) || 0,
+        drawn: parseInt(cells[4]?.innerText.trim()) || 0,
+        lost: parseInt(cells[5]?.innerText.trim()) || 0,
+        points: parseInt(cells[10]?.innerText.trim()) || 0,
+        competition: 'urc'
+      };
+    });
+  });
+
+  await page.close();
+
+  if (standings.length === 0) {
+    console.log('❌ No URC standings found.');
+    return;
+  }
+
+  console.log(`✅ Scraped ${standings.length} teams for URC.`);
+
+  const { error: deleteError } = await supabase
+    .from('simple_standings')
+    .delete()
+    .eq('competition', 'urc');
+
+  if (deleteError) {
+    console.error('❌ Failed to delete old URC records:', deleteError.message);
+    return;
+  }
+
+  
   const { error: insertError } = await supabase
     .from('simple_standings')
     .insert(standings);
 
   if (insertError) {
-    console.error('❌ Failed to insert Super Rugby standings:', insertError.message);
+    console.error('❌ Failed to insert URC standings:', insertError.message);
     return;
   }
 
