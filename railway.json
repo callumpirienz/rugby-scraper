@@ -1,0 +1,19 @@
+{
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  },
+  "deploy": {
+    "startCommand": "node scraper.js"
+  },
+  "plugins": [],
+  "services": [],
+  "crons": [
+    {
+      "schedule": "0 */6 * * *",
+      "command": "npm run start",
+      "name": "Scrape Every 6 Hours"
+    }
+  ]
+}
