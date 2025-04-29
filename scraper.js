@@ -44,7 +44,7 @@ if (competition === 'super-rugby') {
       const won = parseInt(cells[3]?.innerText.trim()) || 0;
       const drawn = parseInt(cells[4]?.innerText.trim()) || 0;
       const lost = parseInt(cells[5]?.innerText.trim()) || 0;
-      const points = parseInt(cells[6]?.innerText.trim()) || 0; // Adjust the index based on actual table structure
+      const points = parseInt(cells[8]?.innerText.trim()) || 0; // Adjust the index based on actual table structure
 
       return { team, played, won, drawn, lost, points };
     });
