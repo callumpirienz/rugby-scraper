@@ -89,9 +89,10 @@ if (competition === 'super-rugby') {
 
 async function scrapeAll() {
   const browser = await puppeteer.launch({
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    headless: true
-  });
+  args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  headless: 'new'
+});
+
 
   await scrapePage(browser, PREMIERSHIP_URL, 'gallagher-premiership');
   await scrapePage(browser, SUPER_RUGBY_URL, 'super-rugby');
