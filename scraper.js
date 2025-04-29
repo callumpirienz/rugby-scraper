@@ -22,12 +22,12 @@ const standings = await page.evaluate(() => {
   return rows.map(row => {
     const cells = row.querySelectorAll('td');
     return {
-      team: cells[0]?.innerText.trim() || '',
-      played: parseInt(cells[1]?.innerText.trim()) || 0,
-      won: parseInt(cells[2]?.innerText.trim()) || 0,
-      drawn: parseInt(cells[3]?.innerText.trim()) || 0,
-      lost: parseInt(cells[4]?.innerText.trim()) || 0,
-      points: parseInt(cells[5]?.innerText.trim()) || 0
+      team: cells[1]?.innerText.trim() || '', // was 0
+      played: parseInt(cells[2]?.innerText.trim()) || 0,
+      won: parseInt(cells[3]?.innerText.trim()) || 0,
+      drawn: parseInt(cells[4]?.innerText.trim()) || 0,
+      lost: parseInt(cells[5]?.innerText.trim()) || 0,
+      points: parseInt(cells[6]?.innerText.trim()) || 0
     };
   });
 });
