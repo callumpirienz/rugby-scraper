@@ -39,7 +39,7 @@ async function scrapeStandings() {
   console.log(`✅ Scraped ${standings.length} standings, updating database...`);
 
   // Clear old data
-  const { error: deleteError } = await supabase.from('standings').delete().neq('id', 0);
+  const { error: deleteError } = await supabase.from('standings').delete();
   if (deleteError) {
     console.error('❌ Failed to delete old records:', deleteError.message);
     return;
