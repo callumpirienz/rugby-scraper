@@ -34,9 +34,14 @@ const rows = Array.from(table.querySelectorAll('tbody tr'));
   }
 
 if (competition === 'super-rugby') {
+  const tableSelector = 'table tbody tr';
+
+  await page.waitForSelector(tableSelector, { timeout: 10000 }); // Wait for table to appear
+
   standings = await page.evaluate(() => {
     const table = document.querySelector('table');
     const rows = Array.from(table.querySelectorAll('tbody tr'));
+
     return rows.map(row => {
       const cells = row.querySelectorAll('td');
       const team = cells[1]?.innerText.trim() || '';
@@ -44,12 +49,13 @@ if (competition === 'super-rugby') {
       const won = parseInt(cells[3]?.innerText.trim()) || 0;
       const drawn = parseInt(cells[4]?.innerText.trim()) || 0;
       const lost = parseInt(cells[5]?.innerText.trim()) || 0;
-      const points = parseInt(cells[10]?.innerText.trim()) || 0; // Adjust the index based on actual table structure in super rugby comp. page
+      const points = parseInt(cells[12]?.innerText.trim()) || 0;
 
       return { team, played, won, drawn, lost, points };
     });
   });
 }
+
 
 
 
