@@ -1,50 +1,43 @@
-require('dotenv').config();
-const axios = require('axios');
-const cheerio = require('cheerio');
+const puppeteer = require('puppeteer');
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Change this to the real URL you're scraping
-const TARGET_URL = 'https://example.com/standings';
+const TARGET_URL = 'https://www.datawrapper.de/_/Q69CZ/';
 
 async function scrapeStandings() {
-    try {
-        const { data: html } = await axios.get(TARGET_URL);
-        const $ = cheerio.load(html);
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.goto(TARGET_URL, { waitUntil: 'networkidle0' });
 
-        const standings = [];
+  // Adjust the selector based on the actual table structure
+  const standings = await page.evaluate(() => {
+    const rows = Array.from(document.querySelectorAll('table tbody tr'));
+    return rows.map(row => {
+      const cells = row.querySelectorAll('td');
+      return {
+        team: cells[0]?.innerText.trim(),
+        played: parseInt(cells[1]?.innerText.trim()),
+        points: parseInt(cells[2]?.innerText.trim())
+      };
+    });
+  });
 
-        $('table.standings-table tr').each((index, element) => {
-            const team = $(element).find('td.team-name').text().trim();
-            const played = $(element).find('td.played').text().trim();
-            const points = $(element).find('td.points').text().trim();
+  await browser.close();
 
-            if (team) {
-                standings.push({
-                    team,
-                    played: parseInt(played),
-                    points: parseInt(points)
-                });
-            }
-        });
+  if (standings.length === 0) {
+    console.log('No standings found. Aborting.');
+    return;
+  }
 
-        if (standings.length === 0) {
-            console.log('No standings found. Aborting.');
-            return;
-        }
+  await supabase.from('standings').delete().neq('id', 0);
 
-        await supabase.from('standings').delete().neq('id', 0);
+  const { error } = await supabase.from('standings').insert(standings);
+  if (error) throw error;
 
-        const { error } = await supabase.from('standings').insert(standings);
-        if (error) throw error;
-
-        console.log(`✅ Standings updated: ${standings.length} records.`);
-    } catch (error) {
-        console.error('❌ Scraping error:', error.message);
-    }
+  console.log(`✅ Standings updated: ${standings.length} records.`);
 }
 
 scrapeStandings();
