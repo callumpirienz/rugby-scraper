@@ -1,5 +1,4 @@
 const puppeteer = require('puppeteer');
-const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
 
 // Setup Supabase client
@@ -7,9 +6,9 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Config: URLs
+// Config URLs
 const PREMIERSHIP_URL = 'https://www.premiershiprugby.com/standings?competition=gallagher-premiership';
-const SUPER_RUGBY_API_URL = 'https://d2g5rj3afg1iem.cloudfront.net/api/v1/competition/super-rugby-pacific/standings';
+const SUPER_RUGBY_URL = 'https://www.tntsports.co.uk/rugby/super-rugby/standings.shtml';
 
 async function scrapeGallagherPremiership(browser) {
   const page = await browser.newPage();
@@ -62,50 +61,59 @@ async function scrapeGallagherPremiership(browser) {
   console.log('✅ Gallagher Premiership standings updated successfully!');
 }
 
-async function scrapeSuperRugby() {
-  try {
-    const { data } = await axios.get(SUPER_RUGBY_API_URL);
+async function scrapeSuperRugby(browser) {
+  const page = await browser.newPage();
+  await page.goto(SUPER_RUGBY_URL, { waitUntil: 'networkidle0' });
 
-    const standings = data.teams.map((team) => ({
-      team: team.teamName || '',
-      played: team.played || 0,
-      won: team.won || 0,
-      drawn: team.drawn || 0,
-      lost: team.lost || 0,
-      points: team.points || 0,
-      competition: 'super-rugby'
-    }));
+  // Wait for the table to fully load
+  await page.waitForSelector('table tbody tr', { timeout: 15000 });
 
-    if (standings.length === 0) {
-      console.log('❌ No Super Rugby standings found.');
-      return;
-    }
+  const standings = await page.evaluate(() => {
+    const table = document.querySelector('table');
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    return rows.map(row => {
+      const cells = row.querySelectorAll('td');
+      return {
+        team: cells[3]?.innerText.trim() || '',
+        played: parseInt(cells[5]?.innerText.trim()) || 0,
+        won: parseInt(cells[6]?.innerText.trim()) || 0,
+        drawn: parseInt(cells[7]?.innerText.trim()) || 0,
+        lost: parseInt(cells[8]?.innerText.trim()) || 0,
+        points: parseInt(cells[12]?.innerText.trim()) || 0,
+        competition: 'super-rugby'
+      };
+    });
+  });
 
-    console.log(`✅ Scraped ${standings.length} teams for Super Rugby.`);
+  await page.close();
 
-    const { error: deleteError } = await supabase
-      .from('simple_standings')
-      .delete()
-      .eq('competition', 'super-rugby');
-
-    if (deleteError) {
-      console.error('❌ Failed to delete old Super Rugby records:', deleteError.message);
-      return;
-    }
-
-    const { error: insertError } = await supabase
-      .from('simple_standings')
-      .insert(standings);
-
-    if (insertError) {
-      console.error('❌ Failed to insert Super Rugby standings:', insertError.message);
-      return;
-    }
-
-    console.log('✅ Super Rugby standings updated successfully!');
-  } catch (error) {
-    console.error('❌ Error scraping Super Rugby:', error.message);
+  if (standings.length === 0) {
+    console.log('❌ No Super Rugby standings found.');
+    return;
   }
+
+  console.log(`✅ Scraped ${standings.length} teams for Super Rugby.`);
+
+  const { error: deleteError } = await supabase
+    .from('simple_standings')
+    .delete()
+    .eq('competition', 'super-rugby');
+
+  if (deleteError) {
+    console.error('❌ Failed to delete old Super Rugby records:', deleteError.message);
+    return;
+  }
+
+  const { error: insertError } = await supabase
+    .from('simple_standings')
+    .insert(standings);
+
+  if (insertError) {
+    console.error('❌ Failed to insert Super Rugby standings:', insertError.message);
+    return;
+  }
+
+  console.log('✅ Super Rugby standings updated successfully!');
 }
 
 async function scrapeAll() {
@@ -115,7 +123,7 @@ async function scrapeAll() {
   });
 
   await scrapeGallagherPremiership(browser);
-  await scrapeSuperRugby();
+  await scrapeSuperRugby(browser);
 
   await browser.close();
 }
