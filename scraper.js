@@ -17,7 +17,8 @@ async function scrapePage(browser, url, competition) {
 
   if (competition === 'gallagher-premiership') {
     standings = await page.evaluate(() => {
-      const rows = Array.from(document.querySelectorAll('table tbody tr'));
+const table = document.querySelector('table'); // just the first table
+const rows = Array.from(table.querySelectorAll('tbody tr'));
       return rows.map(row => {
         const cells = row.querySelectorAll('td');
         return {
