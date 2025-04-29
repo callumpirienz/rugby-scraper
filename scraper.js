@@ -33,22 +33,24 @@ const rows = Array.from(table.querySelectorAll('tbody tr'));
     });
   }
 
-  if (competition === 'super-rugby') {
-    standings = await page.evaluate(() => {
-      const rows = Array.from(document.querySelectorAll('table tbody tr'));
-      return rows.map(row => {
-        const cells = row.querySelectorAll('td');
-        const team = cells[1]?.innerText.trim() || '';
-        const played = parseInt(cells[2]?.innerText.trim()) || 0;
-        const won = parseInt(cells[3]?.innerText.trim()) || 0;
-        const lost = parseInt(cells[4]?.innerText.trim()) || 0;
-        const drawn = parseInt(cells[5]?.innerText.trim()) || 0;
-        const points = parseInt(cells[10]?.innerText.trim()) || 0;
+if (competition === 'super-rugby') {
+  standings = await page.evaluate(() => {
+    const table = document.querySelector('table');
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    return rows.map(row => {
+      const cells = row.querySelectorAll('td');
+      const team = cells[1]?.innerText.trim() || '';
+      const played = parseInt(cells[2]?.innerText.trim()) || 0;
+      const won = parseInt(cells[3]?.innerText.trim()) || 0;
+      const lost = parseInt(cells[4]?.innerText.trim()) || 0;
+      const drawn = parseInt(cells[5]?.innerText.trim()) || 0;
+      const points = 0; // no points column
 
-        return { team, played, won, drawn, lost, points };
-      });
+      return { team, played, won, drawn, lost, points };
     });
-  }
+  });
+}
+
 
   await page.close();
 
