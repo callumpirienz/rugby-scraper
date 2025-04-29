@@ -134,7 +134,7 @@ async function scrapeUnitedRugby(browser) {
         drawn: parseInt(cells[4]?.innerText.trim()) || 0,
         lost: parseInt(cells[5]?.innerText.trim()) || 0,
         points: parseInt(cells[10]?.innerText.trim()) || 0,
-        competition: 'united-rugby'
+        competition: 'united-rugby-championship'
       };
     });
   });
@@ -151,7 +151,7 @@ async function scrapeUnitedRugby(browser) {
   const { error: deleteError } = await supabase
     .from('simple_standings')
     .delete()
-    .eq('competition', 'united-rugby');
+    .eq('competition', 'united-rugby-championship');
 
   if (deleteError) {
     console.error('❌ Failed to delete old United Rugby records:', deleteError.message);
