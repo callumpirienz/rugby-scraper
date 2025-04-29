@@ -42,14 +42,15 @@ if (competition === 'super-rugby') {
       const team = cells[1]?.innerText.trim() || '';
       const played = parseInt(cells[2]?.innerText.trim()) || 0;
       const won = parseInt(cells[3]?.innerText.trim()) || 0;
-      const lost = parseInt(cells[4]?.innerText.trim()) || 0;
-      const drawn = parseInt(cells[5]?.innerText.trim()) || 0;
-      const points = 0; // no points column
+      const drawn = parseInt(cells[4]?.innerText.trim()) || 0;
+      const lost = parseInt(cells[5]?.innerText.trim()) || 0;
+      const points = parseInt(cells[10]?.innerText.trim()) || 0; // Adjust the index based on actual table structure
 
       return { team, played, won, drawn, lost, points };
     });
   });
 }
+
 
 
   await page.close();
