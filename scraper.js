@@ -11,7 +11,6 @@ const PREMIERSHIP_URL = 'https://www.premiershiprugby.com/standings?competition=
 const SUPER_RUGBY_URL = 'https://www.skysports.com/rugbyunion/competitions/super-rugby/tables';
 const UNITED_RUGBY_URL = 'https://www.unitedrugby.com/match-centre/table/2024-25';
 const TOP14_URL = 'https://www.skysports.com/rugbyunion/competitions/top-14/tables';
-const MLR_URL = 'https://www.majorleague.rugby/standings/';
 
 async function scrapeGallagherPremiership(browser) {
   const page = await browser.newPage();
@@ -130,11 +129,11 @@ async function scrapeTop14(browser) {
     return rows.map(row => {
       const cells = row.querySelectorAll('td');
       return {
-         team: cells[1]?.innerText.trim() || '',
+        team: cells[1]?.innerText.trim() || '',
         played: parseInt(cells[2]?.innerText.trim()) || 0,
         won: parseInt(cells[3]?.innerText.trim()) || 0,
-        drawn: parseInt(cells[4]?.innerText.trim()) || 0, // fixed
-        lost: parseInt(cells[5]?.innerText.trim()) || 0,  // fixed
+        drawn: parseInt(cells[4]?.innerText.trim()) || 0,
+        lost: parseInt(cells[5]?.innerText.trim()) || 0,
         points: parseInt(cells[11]?.innerText.trim()) || 0,
         competition: 'top-14'
       };
@@ -156,42 +155,6 @@ async function scrapeTop14(browser) {
   else console.log('✅ Top 14 standings updated successfully!');
 }
 
-async function scrapeMLR(browser) {
-  const page = await browser.newPage();
-  await page.goto(MLR_URL, { waitUntil: 'networkidle0' });
-  await page.waitForSelector('table tbody tr', { timeout: 15000 });
-
-  const standings = await page.evaluate(() => {
-    const rows = Array.from(document.querySelectorAll('table tbody tr'));
-    return rows.map(row => {
-      const cells = row.querySelectorAll('td');
-      return {
-        team: cells[1]?.innerText.trim() || '',
-        played: parseInt(cells[2]?.innerText.trim()) || 0,
-        won: parseInt(cells[3]?.innerText.trim()) || 0,
-        drawn: parseInt(cells[4]?.innerText.trim()) || 0,
-        lost: parseInt(cells[5]?.innerText.trim()) || 0,
-        points: parseInt(cells[10]?.innerText.trim()) || 0,
-        competition: 'mlr'
-      };
-    });
-  });
-
-  await page.close();
-
-  if (standings.length === 0) {
-    console.log('❌ No MLR standings found.');
-    return;
-  }
-
-  console.log(`✅ Scraped ${standings.length} teams for MLR.`);
-
-  await supabase.from('simple_standings').delete().eq('competition', 'mlr');
-  const { error } = await supabase.from('simple_standings').insert(standings);
-  if (error) console.error('❌ Insert error:', error.message);
-  else console.log('✅ MLR standings updated successfully!');
-}
-
 async function scrapeAll() {
   const browser = await puppeteer.launch({
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -202,7 +165,6 @@ async function scrapeAll() {
   await scrapeSuperRugby(browser);
   await scrapeUnitedRugby(browser);
   await scrapeTop14(browser);
-  await scrapeMLR(browser);
 
   await browser.close();
 }
