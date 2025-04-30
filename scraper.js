@@ -8,7 +8,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Config URLs
 const PREMIERSHIP_URL = 'https://www.premiershiprugby.com/standings?competition=gallagher-premiership';
-const SUPER_RUGBY_URL = 'https://www.bbc.com/sport/rugby-union/super-rugby/table';
+const SUPER_RUGBY_URL = 'https://www.skysports.com/rugbyunion/competitions/super-rugby/tables';
 const UNITED_RUGBY_URL = 'https://www.unitedrugby.com/match-centre/table/2024-25';
 
 async function scrapeGallagherPremiership(browser) {
@@ -77,8 +77,8 @@ async function scrapeSuperRugby(browser) {
         team: cells[1]?.innerText.trim() || '',
         played: parseInt(cells[2]?.innerText.trim()) || 0,
         won: parseInt(cells[3]?.innerText.trim()) || 0,
-        drawn: parseInt(cells[5]?.innerText.trim()) || 0,
-        lost: parseInt(cells[4]?.innerText.trim()) || 0,
+        drawn: parseInt(cells[4]?.innerText.trim()) || 0,
+        lost: parseInt(cells[5]?.innerText.trim()) || 0,
         points: parseInt(cells[10]?.innerText.trim()) || 0,
         competition: 'super-rugby'
       };
