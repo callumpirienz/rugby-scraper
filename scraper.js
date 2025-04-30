@@ -135,7 +135,7 @@ async function scrapeTop14(browser) {
         won: parseInt(cells[3]?.innerText.trim()) || 0,
         drawn: parseInt(cells[4]?.innerText.trim()) || 0, // fixed
         lost: parseInt(cells[5]?.innerText.trim()) || 0,  // fixed
-        points: parseInt(cells[8]?.innerText.trim()) || 0,
+        points: parseInt(cells[11]?.innerText.trim()) || 0,
         competition: 'top-14'
       };
     });
