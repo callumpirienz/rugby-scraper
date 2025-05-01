@@ -60,8 +60,8 @@ async function scrapeSuperRugby(browser) {
         team: cells[1]?.innerText.trim() || '',
         played: parseInt(cells[2]?.innerText.trim()) || 0,
         won: parseInt(cells[3]?.innerText.trim()) || 0,
-        drawn: parseInt(cells[5]?.innerText.trim()) || 0, // fixed
-        lost: parseInt(cells[4]?.innerText.trim()) || 0,  // fixed
+        drawn: parseInt(cells[4]?.innerText.trim()) || 0, // fixed
+        lost: parseInt(cells[5]?.innerText.trim()) || 0,  // fixed
         points: parseInt(cells[10]?.innerText.trim()) || 0,
         competition: 'super-rugby'
       };
