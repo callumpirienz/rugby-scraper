@@ -1,4 +1,3 @@
-updated_scraper_code = """
 const puppeteer = require('puppeteer');
 const { createClient } = require('@supabase/supabase-js');
 
