@@ -37,6 +37,7 @@ async function scrapeGenericSkyLeague(url, competition) {
           won: parseInt(cells[3]?.innerText.trim()) || 0,
           drawn: parseInt(cells[4]?.innerText.trim()) || 0,
           lost: parseInt(cells[5]?.innerText.trim()) || 0,
+          pd: parseInt(cells[8]?.innerText.trim()) || 0,
           points: parseInt(cells[10]?.innerText.trim()) || 0,
           competition
         };
@@ -109,6 +110,7 @@ async function scrapeSuperRugby(browser) {
         won: parseInt(cells[3]?.innerText.trim()) || 0,
         drawn: parseInt(cells[4]?.innerText.trim()) || 0,
         lost: parseInt(cells[5]?.innerText.trim()) || 0,
+        pd: parseInt(cells[8]?.innerText.trim()) || 0,
         points: parseInt(cells[10]?.innerText.trim()) || 0,
         competition: 'super-rugby'
       };
@@ -141,6 +143,7 @@ async function scrapeUnitedRugby(browser) {
         won: parseInt(cells[3]?.innerText.trim()) || 0,
         drawn: parseInt(cells[4]?.innerText.trim()) || 0,
         lost: parseInt(cells[5]?.innerText.trim()) || 0,
+        pd: parseInt(cells[8]?.innerText.trim()) || 0,
         points: parseInt(cells[10]?.innerText.trim()) || 0,
         competition: 'united-rugby-championship'
       };
@@ -173,6 +176,7 @@ async function scrapeTop14(browser) {
         won: parseInt(cells[3]?.innerText.trim()) || 0,
         drawn: parseInt(cells[4]?.innerText.trim()) || 0,
         lost: parseInt(cells[5]?.innerText.trim()) || 0,
+        pd: parseInt(cells[8]?.innerText.trim()) || 0,
         points: parseInt(cells[10]?.innerText.trim()) || 0,
         competition: 'top-14'
       };
