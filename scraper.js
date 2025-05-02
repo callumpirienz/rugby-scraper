@@ -7,9 +7,9 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // URLs
-const PREMIERSHIP_URL = 'https://www.premiershiprugby.com/standings?competition=gallagher-premiership';
+const PREMIERSHIP_URL = 'https://www.skysports.com/rugbyunion/competitions/gallagher-premiership/tables';
 const SUPER_RUGBY_URL = 'https://www.skysports.com/rugbyunion/competitions/super-rugby/tables';
-const UNITED_RUGBY_URL = 'https://www.unitedrugby.com/match-centre/table/2024-25';
+const UNITED_RUGBY_URL = 'https://www.skysports.com/rugbyunion/competitions/united-rugby-championship/tables';
 const TOP14_URL = 'https://www.skysports.com/rugbyunion/competitions/top-14/tables';
 const NRL_URL = 'https://www.skysports.com/rugbyleague/competitions/telstra-premiership/tables';
 const SUPER_LEAGUE_URL = 'https://www.skysports.com/rugbyleague/competitions/super-league/tables';
@@ -76,7 +76,8 @@ async function scrapeGallagherPremiership(browser) {
         won: parseInt(cells[3]?.innerText.trim()) || 0,
         drawn: parseInt(cells[4]?.innerText.trim()) || 0,
         lost: parseInt(cells[5]?.innerText.trim()) || 0,
-        points: parseInt(cells[6]?.innerText.trim()) || 0,
+        pd: parseInt(cells[8]?.innerText.trim()) || 0,
+        points: parseInt(cells[10]?.innerText.trim()) || 0,
         competition: 'gallagher-premiership'
       };
     });
