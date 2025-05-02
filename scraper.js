@@ -1,3 +1,4 @@
+// scraper.js
 const puppeteer = require('puppeteer');
 const { createClient } = require('@supabase/supabase-js');
 
@@ -7,205 +8,115 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // URLs
-const PREMIERSHIP_URL = 'https://www.premiershiprugby.com/standings?competition=gallagher-premiership';
-const SUPER_RUGBY_URL = 'https://www.skysports.com/rugbyunion/competitions/super-rugby/tables';
-const UNITED_RUGBY_URL = 'https://www.unitedrugby.com/match-centre/table/2024-25';
-const TOP14_URL = 'https://www.skysports.com/rugbyunion/competitions/top-14/tables';
-const NRL_URL = 'https://www.skysports.com/rugbyleague/competitions/telstra-premiership/tables';
-const SUPER_LEAGUE_URL = 'https://www.skysports.com/rugbyleague/competitions/super-league/tables';
+const PREMIERSHIP_URL    = 'https://www.skysports.com/rugbyunion/competitions/gallagher-premiership/tables';
+const SUPER_RUGBY_URL    = 'https://www.skysports.com/rugbyunion/competitions/super-rugby/tables';
+const UNITED_RUGBY_URL   = 'https://www.skysports.com/rugbyunion/competitions/united-rugby-championship/tables';
+const TOP14_URL          = 'https://www.skysports.com/rugbyunion/competitions/top-14/tables';
+const NRL_URL            = 'https://www.skysports.com/rugbyleague/competitions/telstra-premiership/tables';
+const SUPER_LEAGUE_URL   = 'https://www.skysports.com/rugbyleague/competitions/super-league/tables';
 
-// Generic scraper for league tables from Sky Sports Rugby League
+// Helper to scrape any generic table
 async function scrapeGenericSkyLeague(url, competition) {
   const browser = await puppeteer.launch({ args: ['--no-sandbox'], headless: 'new' });
-  const page = await browser.newPage();
+  const page    = await browser.newPage();
 
   try {
     await page.goto(url, { waitUntil: 'networkidle2' });
     await page.waitForTimeout(5000);
-    await page.waitForSelector('table', { timeout: 30000 });
+    await page.waitForSelector('table tbody tr', { timeout: 30000 });
 
     const standings = await page.evaluate((competition) => {
-      const table = document.querySelector('table');
-      if (!table) return [];
-
-      const rows = Array.from(table.querySelectorAll('tbody tr'));
-      return rows.map(row => {
-        const cells = row.querySelectorAll('td');
+      const rows = Array.from(document.querySelectorAll('table tbody tr'));
+      return rows.map(r => {
+        const cells = r.querySelectorAll('td');
+        const f = parseInt(cells[6]?.innerText.trim()) || 0;
+        const a = parseInt(cells[7]?.innerText.trim()) || 0;
         return {
-          team: cells[1]?.innerText.trim() || '',
-          played: parseInt(cells[2]?.innerText.trim()) || 0,
-          won: parseInt(cells[3]?.innerText.trim()) || 0,
-          drawn: parseInt(cells[4]?.innerText.trim()) || 0,
-          lost: parseInt(cells[5]?.innerText.trim()) || 0,
-          points: parseInt(cells[10]?.innerText.trim()) || 0,
-          competition
+          team:        cells[1]?.innerText.trim() || '',
+          played:      parseInt(cells[2]?.innerText.trim()) || 0,
+          won:         parseInt(cells[3]?.innerText.trim()) || 0,
+          drawn:       parseInt(cells[4]?.innerText.trim()) || 0,
+          lost:        parseInt(cells[5]?.innerText.trim()) || 0,
+          for:         f,
+          against:     a,
+          pd:          f - a,
+          points:      parseInt(cells[10]?.innerText.trim()) || 0,
+          competition,
         };
       });
     }, competition);
 
-    if (!standings.length) {
-      console.warn(`⚠️  No data found for ${competition}`);
+    if (standings.length === 0) {
+      console.warn(`⚠️  No data for ${competition}`);
     } else {
-      console.log(`✅ Scraped ${standings.length} teams for ${competition}`);
+      console.log(`✅ Scraped ${standings.length} rows for ${competition}`);
     }
 
+    // delete old, insert new
     await supabase.from('simple_standings').delete().eq('competition', competition);
     const { error } = await supabase.from('simple_standings').insert(standings);
-    if (error) console.error(`❌ Supabase insert error for ${competition}:`, error.message);
-    else console.log(`✅ ${competition} standings updated successfully!`);
-  } catch (err) {
-    console.error(`❌ Failed scraping ${competition}:`, err.message);
+    if (error) console.error(`❌ Insert error (${competition}):`, error.message);
+    else           console.log(`✅ ${competition} updated`);
+  } catch (e) {
+    console.error(`❌ Failed ${competition}:`, e.message);
   } finally {
     await page.close();
     await browser.close();
   }
 }
 
-// Dedicated union scrapers
-async function scrapeGallagherPremiership(browser) {
-  const page = await browser.newPage();
-  await page.goto(PREMIERSHIP_URL, { waitUntil: 'networkidle0' });
+// UNION-specific functions (same PD logic)
+async function scrapeUnionTable(url, competition) {
+  const browser = await puppeteer.launch({ args: ['--no-sandbox'], headless: 'new' });
+  const page    = await browser.newPage();
+  try {
+    await page.goto(url, { waitUntil: 'networkidle0' });
+    await page.waitForSelector('table tbody tr', { timeout: 15000 });
 
-  const standings = await page.evaluate(() => {
-    const rows = Array.from(document.querySelectorAll('table tbody tr'));
-    return rows.map(row => {
-      const cells = row.querySelectorAll('td');
-      return {
-        team: cells[1]?.innerText.trim() || '',
-        played: parseInt(cells[2]?.innerText.trim()) || 0,
-        won: parseInt(cells[3]?.innerText.trim()) || 0,
-        drawn: parseInt(cells[4]?.innerText.trim()) || 0,
-        lost: parseInt(cells[5]?.innerText.trim()) || 0,
-        points: parseInt(cells[6]?.innerText.trim()) || 0,
-        competition: 'gallagher-premiership'
-      };
-    });
-  });
+    const standings = await page.evaluate((competition) => {
+      return Array.from(document.querySelectorAll('table tbody tr')).map(r => {
+        const cells = r.querySelectorAll('td');
+        const f = parseInt(cells[6]?.innerText.trim()) || 0;
+        const a = parseInt(cells[7]?.innerText.trim()) || 0;
+        return {
+          team:        cells[1]?.innerText.trim() || '',
+          played:      parseInt(cells[2]?.innerText.trim()) || 0,
+          won:         parseInt(cells[3]?.innerText.trim()) || 0,
+          drawn:       parseInt(cells[4]?.innerText.trim()) || 0,
+          lost:        parseInt(cells[5]?.innerText.trim()) || 0,
+          for:         f,
+          against:     a,
+          pd:          f - a,
+          points:      parseInt(cells[10]?.innerText.trim()) || 0,
+          competition,
+        };
+      });
+    }, competition);
 
-  await page.close();
-
-  if (standings.length) {
-    console.log(`✅ Scraped ${standings.length} teams for Gallagher Premiership.`);
-    await supabase.from('simple_standings').delete().eq('competition', 'gallagher-premiership');
-    const { error } = await supabase.from('simple_standings').insert(standings);
-    if (error) console.error('❌ Insert error:', error.message);
-    else console.log('✅ Gallagher Premiership standings updated successfully!');
+    if (standings.length) {
+      console.log(`✅ Scraped ${standings.length} for ${competition}`);
+      await supabase.from('simple_standings').delete().eq('competition', competition);
+      const { error } = await supabase.from('simple_standings').insert(standings);
+      if (error) console.error(`❌ Insert (${competition}):`, error.message);
+      else       console.log(`✅ ${competition} updated`);
+    }
+  } catch (e) {
+    console.error(`❌ Error ${competition}:`, e.message);
+  } finally {
+    await page.close();
+    await browser.close();
   }
 }
 
-async function scrapeSuperRugby(browser) {
-  const page = await browser.newPage();
-  await page.goto(SUPER_RUGBY_URL, { waitUntil: 'networkidle0' });
-  await page.waitForSelector('table tbody tr', { timeout: 15000 });
-
-  const standings = await page.evaluate(() => {
-    const rows = Array.from(document.querySelectorAll('table tbody tr'));
-    return rows.map(row => {
-      const cells = row.querySelectorAll('td');
-      return {
-        team: cells[1]?.innerText.trim() || '',
-        played: parseInt(cells[2]?.innerText.trim()) || 0,
-        won: parseInt(cells[3]?.innerText.trim()) || 0,
-        drawn: parseInt(cells[4]?.innerText.trim()) || 0,
-        lost: parseInt(cells[5]?.innerText.trim()) || 0,
-        points: parseInt(cells[10]?.innerText.trim()) || 0,
-        competition: 'super-rugby'
-      };
-    });
-  });
-
-  await page.close();
-
-  if (standings.length) {
-    console.log(`✅ Scraped ${standings.length} teams for Super Rugby.`);
-    await supabase.from('simple_standings').delete().eq('competition', 'super-rugby');
-    const { error } = await supabase.from('simple_standings').insert(standings);
-    if (error) console.error('❌ Insert error:', error.message);
-    else console.log('✅ Super Rugby standings updated successfully!');
-  }
-}
-
-async function scrapeUnitedRugby(browser) {
-  const page = await browser.newPage();
-  await page.goto(UNITED_RUGBY_URL, { waitUntil: 'networkidle0' });
-  await page.waitForSelector('table tbody tr', { timeout: 15000 });
-
-  const standings = await page.evaluate(() => {
-    const rows = Array.from(document.querySelectorAll('table tbody tr'));
-    return rows.map(row => {
-      const cells = row.querySelectorAll('td');
-      return {
-        team: cells[1]?.innerText.trim() || '',
-        played: parseInt(cells[2]?.innerText.trim()) || 0,
-        won: parseInt(cells[3]?.innerText.trim()) || 0,
-        drawn: parseInt(cells[4]?.innerText.trim()) || 0,
-        lost: parseInt(cells[5]?.innerText.trim()) || 0,
-        points: parseInt(cells[10]?.innerText.trim()) || 0,
-        competition: 'united-rugby-championship'
-      };
-    });
-  });
-
-  await page.close();
-
-  if (standings.length) {
-    console.log(`✅ Scraped ${standings.length} teams for United Rugby.`);
-    await supabase.from('simple_standings').delete().eq('competition', 'united-rugby-championship');
-    const { error } = await supabase.from('simple_standings').insert(standings);
-    if (error) console.error('❌ Insert error:', error.message);
-    else console.log('✅ United Rugby standings updated successfully!');
-  }
-}
-
-async function scrapeTop14(browser) {
-  const page = await browser.newPage();
-  await page.goto(TOP14_URL, { waitUntil: 'networkidle0' });
-  await page.waitForSelector('table tbody tr', { timeout: 15000 });
-
-  const standings = await page.evaluate(() => {
-    const rows = Array.from(document.querySelectorAll('table tbody tr'));
-    return rows.map(row => {
-      const cells = row.querySelectorAll('td');
-      return {
-        team: cells[1]?.innerText.trim() || '',
-        played: parseInt(cells[2]?.innerText.trim()) || 0,
-        won: parseInt(cells[3]?.innerText.trim()) || 0,
-        drawn: parseInt(cells[4]?.innerText.trim()) || 0,
-        lost: parseInt(cells[5]?.innerText.trim()) || 0,
-        points: parseInt(cells[10]?.innerText.trim()) || 0,
-        competition: 'top-14'
-      };
-    });
-  });
-
-  await page.close();
-
-  if (standings.length) {
-    console.log(`✅ Scraped ${standings.length} teams for Top 14.`);
-    await supabase.from('simple_standings').delete().eq('competition', 'top-14');
-    const { error } = await supabase.from('simple_standings').insert(standings);
-    if (error) console.error('❌ Insert error:', error.message);
-    else console.log('✅ Top 14 standings updated successfully!');
-  }
-}
-
-// Main entry
 async function scrapeAll() {
-  const browser = await puppeteer.launch({
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    headless: 'new'
-  });
+  // Union comps
+  await scrapeUnionTable(PREMIERSHIP_URL, 'gallagher-premiership');
+  await scrapeUnionTable(SUPER_RUGBY_URL,    'super-rugby');
+  await scrapeUnionTable(UNITED_RUGBY_URL,   'united-rugby-championship');
+  await scrapeUnionTable(TOP14_URL,          'top-14');
 
-  await scrapeGallagherPremiership(browser);
-  await scrapeSuperRugby(browser);
-  await scrapeUnitedRugby(browser);
-  await scrapeTop14(browser);
-
-  // Close browser before launching new ones for league scraping
-  await browser.close();
-
-  // League scrapers use independent browser sessions
-  await scrapeGenericSkyLeague(NRL_URL, 'nrl');
+  // League comps
+  await scrapeGenericSkyLeague(NRL_URL,          'nrl');
   await scrapeGenericSkyLeague(SUPER_LEAGUE_URL, 'super-league');
 }
 
