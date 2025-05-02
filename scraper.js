@@ -7,9 +7,9 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // URLs
-const PREMIERSHIP_URL = 'https://www.skysports.com/rugbyunion/competitions/gallagher-premiership/tables';
+const PREMIERSHIP_URL = 'https://www.premiershiprugby.com/standings?competition=gallagher-premiership';
 const SUPER_RUGBY_URL = 'https://www.skysports.com/rugbyunion/competitions/super-rugby/tables';
-const UNITED_RUGBY_URL = 'https://www.skysports.com/rugbyunion/competitions/united-rugby-championship/tables';
+const UNITED_RUGBY_URL = 'https://www.unitedrugby.com/match-centre/table/2024-25';
 const TOP14_URL = 'https://www.skysports.com/rugbyunion/competitions/top-14/tables';
 const NRL_URL = 'https://www.skysports.com/rugbyleague/competitions/telstra-premiership/tables';
 const SUPER_LEAGUE_URL = 'https://www.skysports.com/rugbyleague/competitions/super-league/tables';
@@ -44,17 +44,17 @@ async function scrapeGenericSkyLeague(url, competition) {
     }, competition);
 
     if (!standings.length) {
-      console.warn(⚠️  No data found for ${competition});
+      console.warn(`⚠️  No data found for ${competition}`);
     } else {
-      console.log(✅ Scraped ${standings.length} teams for ${competition});
+      console.log(`✅ Scraped ${standings.length} teams for ${competition}`);
     }
 
     await supabase.from('simple_standings').delete().eq('competition', competition);
     const { error } = await supabase.from('simple_standings').insert(standings);
-    if (error) console.error(❌ Supabase insert error for ${competition}:, error.message);
-    else console.log(✅ ${competition} standings updated successfully!);
+    if (error) console.error(`❌ Supabase insert error for ${competition}:`, error.message);
+    else console.log(`✅ ${competition} standings updated successfully!`);
   } catch (err) {
-    console.error(❌ Failed scraping ${competition}:, err.message);
+    console.error(`❌ Failed scraping ${competition}:`, err.message);
   } finally {
     await page.close();
     await browser.close();
@@ -76,7 +76,7 @@ async function scrapeGallagherPremiership(browser) {
         won: parseInt(cells[3]?.innerText.trim()) || 0,
         drawn: parseInt(cells[4]?.innerText.trim()) || 0,
         lost: parseInt(cells[5]?.innerText.trim()) || 0,
-        points: parseInt(cells[10]?.innerText.trim()) || 0,
+        points: parseInt(cells[6]?.innerText.trim()) || 0,
         competition: 'gallagher-premiership'
       };
     });
@@ -85,7 +85,7 @@ async function scrapeGallagherPremiership(browser) {
   await page.close();
 
   if (standings.length) {
-    console.log(✅ Scraped ${standings.length} teams for Gallagher Premiership.);
+    console.log(`✅ Scraped ${standings.length} teams for Gallagher Premiership.`);
     await supabase.from('simple_standings').delete().eq('competition', 'gallagher-premiership');
     const { error } = await supabase.from('simple_standings').insert(standings);
     if (error) console.error('❌ Insert error:', error.message);
@@ -117,7 +117,7 @@ async function scrapeSuperRugby(browser) {
   await page.close();
 
   if (standings.length) {
-    console.log(✅ Scraped ${standings.length} teams for Super Rugby.);
+    console.log(`✅ Scraped ${standings.length} teams for Super Rugby.`);
     await supabase.from('simple_standings').delete().eq('competition', 'super-rugby');
     const { error } = await supabase.from('simple_standings').insert(standings);
     if (error) console.error('❌ Insert error:', error.message);
@@ -149,7 +149,7 @@ async function scrapeUnitedRugby(browser) {
   await page.close();
 
   if (standings.length) {
-    console.log(✅ Scraped ${standings.length} teams for United Rugby.);
+    console.log(`✅ Scraped ${standings.length} teams for United Rugby.`);
     await supabase.from('simple_standings').delete().eq('competition', 'united-rugby-championship');
     const { error } = await supabase.from('simple_standings').insert(standings);
     if (error) console.error('❌ Insert error:', error.message);
@@ -181,7 +181,7 @@ async function scrapeTop14(browser) {
   await page.close();
 
   if (standings.length) {
-    console.log(✅ Scraped ${standings.length} teams for Top 14.);
+    console.log(`✅ Scraped ${standings.length} teams for Top 14.`);
     await supabase.from('simple_standings').delete().eq('competition', 'top-14');
     const { error } = await supabase.from('simple_standings').insert(standings);
     if (error) console.error('❌ Insert error:', error.message);
