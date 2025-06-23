@@ -11,7 +11,6 @@ const PREMIERSHIP_URL           = 'https://www.skysports.com/rugbyunion/competit
 const SUPER_RUGBY_URL           = 'https://www.skysports.com/rugbyunion/competitions/super-rugby/tables';
 const UNITED_RUGBY_URL          = 'https://www.skysports.com/rugbyunion/competitions/united-rugby-championship/tables';
 const TOP14_URL                 = 'https://www.skysports.com/rugbyunion/competitions/top-14/tables';
-const NRL_URL                   = 'https://www.bbc.com/sport/rugby-league/nrl-premiership/table';
 const SUPER_LEAGUE_URL          = 'https://www.skysports.com/rugbyleague/competitions/super-league/tables';
 
 // URLs – new rugby league
@@ -205,38 +204,7 @@ async function scrapeTop14(browser) {
 }
 
 
-async function scrapeBBCNRL(browser) {
-  const page = await browser.newPage();
-  await page.goto(BBC_NRL_URL,    { waitUntil: 'networkidle2' });
-  await page.waitForSelector('table tbody tr', { timeout: 30000 });
 
-  const standings = await page.evaluate(() => {
-    // BBC duplicates each <td> for mobile/desktop – grab every 2nd
-    const rows = Array.from(document.querySelectorAll('table tbody tr'));
-    return rows.map(row => {
-      const cells = Array.from(row.querySelectorAll('td'));
-      // pick the first of each pair: index 0,2,4,... => actual data
-      const get = idx => cells[idx * 2]?.innerText.trim() || '';
-      return {
-        team:       get(1),
-        played:     parseInt(get(2), 10) || 0,
-        won:        parseInt(get(3), 10) || 0,
-        drawn:      parseInt(get(5), 10) || 0,  // BBC order: Played, Won, Lost, Drawn
-        lost:       parseInt(get(4), 10) || 0,
-        pd:         parseInt(get(8), 10) || 0,  // points difference
-        points:     parseInt(get(9), 10) || 0,
-        competition:'nrl',
-      };
-    });
-  });
-
-  // wipe & insert like your SkySports functions
-  await supabase.from('simple_standings').delete().eq('competition', 'nrl-bbc');
-  const { error } = await supabase.from('simple_standings').insert(standings);
-  if (error) console.error('❌ BBC NRL insert error:', error.message);
-  else console.log(`✅ BBC NRL standings updated: ${standings.length} teams`);
-  await page.close();
-}
 
 // Main entry
 async function scrapeAll() {
@@ -253,7 +221,6 @@ async function scrapeAll() {
   await browser.close();
 
   // Rugby League – generic
-  await scrapeBBCNRL(NRL_URL,                 'nrl');
   await scrapeGenericSkySports(SUPER_LEAGUE_URL,        'super-league');
   await scrapeGenericSkySports(WOMENS_SUPER_LEAGUE_URL, 'womens-super-league');
   await scrapeGenericSkySports(RL_CHAMPIONSHIP_URL,     'rl-championship');
