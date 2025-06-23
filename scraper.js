@@ -114,7 +114,7 @@ async function scrapeGallagherPremiership(browser) {
     return rows.map(row => {
       const cells = row.querySelectorAll('td');
       return {
-        team:   cells[1]?.innerText.trim() || '',
+        team:   cells[2]?.innerText.trim() || '',
         played: parseInt(cells[2]?.innerText.trim()) || 0,
         won:    parseInt(cells[3]?.innerText.trim()) || 0,
         drawn:  parseInt(cells[4]?.innerText.trim()) || 0,
