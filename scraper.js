@@ -120,7 +120,7 @@ async function scrapeNRL(browser) {
         drawn:  parseInt(cells[4]?.innerText.trim()) || 0,
         lost:   parseInt(cells[5]?.innerText.trim()) || 0,
         pd:     parseInt(cells[6]?.innerText.trim()) || 0,
-        points: parseInt(cells[8]?.innerText.trim()) || 0,
+        points: parseInt(cells[6]?.innerText.trim()) || 0,
         competition: 'nrl'
       };
     });
