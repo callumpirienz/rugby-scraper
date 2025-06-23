@@ -91,7 +91,7 @@ async function scrapeNRL() {
           drawn:  parseInt(cells[4]?.innerText.trim()) || 0,
           lost:   parseInt(cells[5]?.innerText.trim()) || 0,
           pd:     parseInt(cells[6]?.innerText.trim()) || 0,  // custom index
-          points: parseInt(cells[8]?.innerText.trim()) || 0,  // custom index
+          points: parseInt(cells[6]?.innerText.trim()) || 0,  // custom index
           competition: 'nrl'
         };
       });
