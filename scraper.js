@@ -170,6 +170,40 @@ async function scrapeUnitedRugby(browser) {
   }
 }
 
+
+async function scrapeUnitedRugby(browser) {
+  const page = await browser.newPage();
+  await page.goto(NRL_URL, { waitUntil: 'networkidle0' });
+  await page.waitForSelector('table tbody tr', { timeout: 15000 });
+
+  const standings = await page.evaluate(() => {
+    const rows = Array.from(document.querySelectorAll('table tbody tr'));
+    return rows.map(row => {
+      const cells = row.querySelectorAll('td');
+      return {
+        team:   cells[1]?.innerText.trim() || '',
+        played: parseInt(cells[2]?.innerText.trim()) || 0,
+        won:    parseInt(cells[3]?.innerText.trim()) || 0,
+        drawn:  parseInt(cells[4]?.innerText.trim()) || 0,
+        lost:   parseInt(cells[5]?.innerText.trim()) || 0,
+        pd:     parseInt(cells[6]?.innerText.trim()) || 0,
+        points: parseInt(cells[8]?.innerText.trim()) || 0,
+        competition: 'nrl'
+      };
+    });
+  });
+
+  await page.close();
+
+  if (standings.length) {
+    console.log(`✅ Scraped ${standings.length} teams for United Rugby.`);
+    await supabase.from('simple_standings').delete().eq('competition', 'united-rugby-championship');
+    const { error } = await supabase.from('simple_standings').insert(standings);
+    if (error) console.error('❌ Insert error:', error.message);
+    else console.log('✅ United Rugby standings updated successfully!');
+  }
+}
+
 async function scrapeTop14(browser) {
   const page = await browser.newPage();
   await page.goto(TOP14_URL, { waitUntil: 'networkidle0' });
