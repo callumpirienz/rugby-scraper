@@ -105,7 +105,7 @@ async function scrapeGallagherPremiership(browser) {
 }
 
 
-async function scrapeGallagherPremiership(browser) {
+async function scrapeNRL(browser) {
   const page = await browser.newPage();
   await page.goto(NRL_URL, { waitUntil: 'networkidle0' });
 
