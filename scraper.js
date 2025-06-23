@@ -104,6 +104,39 @@ async function scrapeGallagherPremiership(browser) {
   }
 }
 
+
+async function scrapeGallagherPremiership(browser) {
+  const page = await browser.newPage();
+  await page.goto(NRL_URL, { waitUntil: 'networkidle0' });
+
+  const standings = await page.evaluate(() => {
+    const rows = Array.from(document.querySelectorAll('table tbody tr'));
+    return rows.map(row => {
+      const cells = row.querySelectorAll('td');
+      return {
+        team:   cells[1]?.innerText.trim() || '',
+        played: parseInt(cells[2]?.innerText.trim()) || 0,
+        won:    parseInt(cells[3]?.innerText.trim()) || 0,
+        drawn:  parseInt(cells[4]?.innerText.trim()) || 0,
+        lost:   parseInt(cells[5]?.innerText.trim()) || 0,
+        pd:     parseInt(cells[6]?.innerText.trim()) || 0,
+        points: parseInt(cells[8]?.innerText.trim()) || 0,
+        competition: 'nrl'
+      };
+    });
+  });
+
+  await page.close();
+
+  if (standings.length) {
+    console.log(`✅ Scraped ${standings.length} teams for NRL.`);
+    await supabase.from('simple_standings').delete().eq('competition', 'nrl');
+    const { error } = await supabase.from('simple_standings').insert(standings);
+    if (error) console.error('❌ Insert error:', error.message);
+    else console.log('✅ NRL standings updated successfully!');
+  }
+}
+
 async function scrapeSuperRugby(browser) {
   const page = await browser.newPage();
   await page.goto(SUPER_RUGBY_URL, { waitUntil: 'networkidle0' });
