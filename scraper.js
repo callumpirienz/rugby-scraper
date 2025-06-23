@@ -108,6 +108,7 @@ async function scrapeGallagherPremiership(browser) {
 async function scrapeNRL(browser) {
   const page = await browser.newPage();
   await page.goto(NRL_URL, { waitUntil: 'networkidle0' });
+  await page.waitForSelector('table tbody tr', { timeout: 15000 });
 
   const standings = await page.evaluate(() => {
     const rows = Array.from(document.querySelectorAll('table tbody tr'));
